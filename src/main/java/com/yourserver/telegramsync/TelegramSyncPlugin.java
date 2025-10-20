@@ -161,21 +161,40 @@ public class TelegramSyncPlugin extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void onPlayerChat(AsyncPlayerChatEvent event) {
-        if (!botConnected || !getConfig().getBoolean("sync.minecraft-to-telegram", true)) {
-            return;
-        }
-        
-        Player player = event.getPlayer();
-        String message = event.getMessage();
-        
-        // Проверяем на блокируемые слова
-        if (containsBlockedWords(message)) {
-            player.sendMessage(configManager.getMessage("errors.message-blocked"));
-            event.setCancelled(true);
-            return;
-        }
-        
+public void onPlayerChat(AsyncPlayerChatEvent event) {
+    if (!botConnected || !getConfig().getBoolean("sync.minecraft-to-telegram", true)) {
+        return;
+    }
+    
+    Player player = event.getPlayer();
+    String message = event.getMessage();
+    
+    // Проверяем на блокируемые слова
+    if (containsBlockedWords(message)) {
+        player.sendMessage(configManager.getMessage("errors.message-blocked"));
+        event.setCancelled(true);
+        return;
+    }
+    
+    // Фильтрация: какие сообщения отправлять в Telegram
+    boolean shouldSend = false;
+    
+    // Сообщения с ! в начале
+    if (message.startsWith("!") && getConfig().getBoolean("sync.send-command-messages", true)) {
+        shouldSend = true;
+        // Убираем ! из сообщения для Telegram
+        message = message.substring(1);
+    }
+    // Сообщения от плагинов (содержат [])
+    else if (message.contains("[") && message.contains("]") && getConfig().getBoolean("sync.send-plugin-messages", true)) {
+        shouldSend = true;
+    }
+    // Обычные сообщения (если включено)
+    else if (getConfig().getBoolean("sync.send-normal-messages", false)) {
+        shouldSend = true;
+    }
+    
+    if (shouldSend) {
         // Форматируем сообщение для Telegram
         String formattedMessage = formatMinecraftToTelegram(player.getName(), message);
         
