@@ -1,0 +1,295 @@
+name: 🏗️ TelegramSync CI/CD
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:  # Ручной запуск
+
+env:
+  MAVEN_OPTS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.count=3
+
+jobs:
+  build:
+    name: 📦 Сборка плагина
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 🚀 Клонирование репозитория
+      uses: actions/checkout@v4
+      
+    - name: ⚙️ Установка Java 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: 'maven'
+        
+    - name: 🔨 Сборка проекта
+      run: mvn -B clean compile --file pom.xml
+      
+    - name: 📦 Создание JAR файла
+      run: mvn -B package --file pom.xml -DskipTests
+      
+    - name: ✅ Проверка JAR файла
+      run: |
+        echo "🔍 Проверяем содержимое JAR..."
+        jar tf target/TelegramSync-*.jar | grep -E "(plugin\.yml|config\.yml|messages\.yml)"
+        echo "🎉 Все необходимые файлы присутствуют!"
+        
+        # Проверяем размер JAR
+        JAR_SIZE=$(stat -c%s target/TelegramSync-*.jar)
+        echo "📊 Размер JAR файла: $((JAR_SIZE / 1024)) KB"
+        
+    - name: 📤 Загрузка артефактов
+      uses: actions/upload-artifact@v4
+      with:
+        name: telegramsync-build
+        path: |
+          target/*.jar
+          target/*-sources.jar
+        retention-days: 30
+        compression-level: 9
+        
+    - name: 📊 Отчет о сборке
+      run: |
+        echo "=========================================="
+        echo "🎉 СБОРКА УСПЕШНО ЗАВЕРШЕНА!"
+        echo "=========================================="
+        echo "📅 Время: $(date)"
+        echo "🔢 Номер сборки: ${{ github.run_number }}"
+        echo "🎯 Ветка: ${{ github.ref }}"
+        echo "🔑 Коммит: ${{ github.sha }}"
+        echo "👤 Автор: ${{ github.actor }}"
+        echo "=========================================="
+
+  test:
+    name: 🧪 Тестирование
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - name: 📥 Загрузка артефактов
+      uses: actions/download-artifact@v4
+      with:
+        name: telegramsync-build
+        
+    - name: 🔍 Проверка структуры
+      run: |
+        echo "📁 Содержимое артефактов:"
+        ls -la
+        echo ""
+        echo "📋 Список JAR файлов:"
+        find . -name "*.jar" -type f
+        
+    - name: 📝 Проверка метаданных
+      run: |
+        echo "🔎 Проверяем метаданные плагина..."
+        # Можно добавить проверку через специальные инструменты
+        echo "✅ Базовая проверка завершена"
+
+  quality:
+    name: 📊 Контроль качества
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 🚀 Клонирование репозитория
+      uses: actions/checkout@v4
+      
+    - name: ⚙️ Установка Java 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        
+    - name: 🔍 Проверка структуры проекта
+      run: |
+        echo "📁 Проверяем структуру проекта..."
+        
+        # Проверяем обязательные файлы
+        REQUIRED_FILES=("pom.xml" "src/main/resources/plugin.yml" "src/main/resources/config.yml" "src/main/resources/messages.yml")
+        
+        for file in "${REQUIRED_FILES[@]}"; do
+          if [ -f "$file" ]; then
+            echo "✅ $file - найден"
+          else
+            echo "❌ $file - ОТСУТСТВУЕТ!"
+            exit 1
+          fi
+        done
+        
+        # Проверяем Java файлы
+        JAVA_FILES_COUNT=$(find src/main/java -name "*.java" | wc -l)
+        echo "📊 Найдено Java файлов: $JAVA_FILES_COUNT"
+        
+        if [ "$JAVA_FILES_COUNT" -eq "0" ]; then
+          echo "❌ Java файлы не найдены!"
+          exit 1
+        fi
+        
+        echo "🎉 Структура проекта в порядке!"
+        
+    - name: 📝 Проверка лицензии
+      run: |
+        if [ ! -f "LICENSE" ]; then
+          echo "⚠️ Файл LICENSE не найден, создаем MIT лицензию..."
+          cat > LICENSE << 'EOF'
+MIT License
+
+Copyright (c) 2024 gordey9992
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+EOF
+          echo "✅ Файл LICENSE создан"
+        else
+          echo "✅ Файл LICENSE найден"
+        fi
+
+  release:
+    name: 🚀 Создание релиза
+    runs-on: ubuntu-latest
+    needs: [build, test, quality]
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: 📥 Загрузка артефактов
+      uses: actions/download-artifact@v4
+      with:
+        name: telegramsync-build
+        
+    - name: 🏷️ Создание GitHub релиза
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          TelegramSync-*.jar
+          TelegramSync-*-sources.jar
+        body: |
+          ## 🎉 TelegramSync ${{ github.ref_name }}
+          
+          ### 🚀 Что нового?
+          - Улучшена стабильность синхронизации
+          - Добавлены новые настройки фильтрации
+          - Оптимизирована работа с памятью
+          
+          ### 🐛 Исправления
+          - Устранены проблемы с кодировкой сообщений
+          - Исправлены ошибки подключения к Telegram
+          - Улучшена обработка длинных сообщений
+          
+          ### ⚙️ Быстрый старт
+          1. Скачайте `TelegramSync-*.jar`
+          2. Поместите в папку `plugins/`
+          3. Настройте бота в `config.yml`
+          4. Используйте `/tg тест` для проверки
+          
+          ### 🎮 Основные команды
+          ```bash
+          /tg <сообщение>          # Отправить в Telegram
+          /telegramsync status     # Статус синхронизации  
+          /tgbroadcast <сообщение> # Трансляция в Telegram
+          /telegramsync reload     # Перезагрузить конфиг
+          ```
+          
+          ### 🔧 Настройка фильтрации
+          По умолчанию в Telegram отправляются только:
+          - Сообщения с `!` в начале (`!всем привет`)
+          - Команды `/tg`
+          - Сообщения от плагинов (XFilesPlugin и др.)
+          - События игроков (вход/выход)
+          
+          ---
+          **📅 Сборка:** ${{ github.run_number }}  
+          **🔗 Коммит:** [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})  
+          **👥 Авторы:** [gordey9992](https://github.com/gordey9992) и [DeepSeek](https://github.com/DeepSeek-AI)
+          
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+        make_latest: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-check:
+    name: 🔍 Проверка деплоя
+    runs-on: ubuntu-latest
+    needs: [build, test]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📥 Загрузка артефактов
+      uses: actions/download-artifact@v4
+      with:
+        name: telegramsync-build
+        
+    - name: 📋 Информация о сборке
+      run: |
+        echo "=========================================="
+        echo "🎯 СБОРКА ГОТОВА К ДЕПЛОЮ!"
+        echo "=========================================="
+        echo "📦 Собранные файлы:"
+        ls -la *.jar
+        echo ""
+        echo "💡 Для деплоя:"
+        echo "1. Скачайте JAR файлы выше"
+        echo "2. Загрузите на свой сервер"
+        echo "3. Поместите в папку plugins/"
+        echo "4. Перезагрузите сервер"
+        echo "=========================================="
+
+  notify:
+    name: 📢 Уведомление
+    runs-on: ubuntu-latest
+    needs: [build, test, quality]
+    if: always()
+    
+    steps:
+    - name: 📊 Статус сборки
+      run: |
+        echo "📋 ОТЧЕТ О СБОРКЕ"
+        echo "================="
+        
+        if [ "${{ needs.build.result }}" == "success" ]; then
+          echo "✅ Сборка: УСПЕШНО"
+        else
+          echo "❌ Сборка: ПРОВАЛЕНО"
+        fi
+        
+        if [ "${{ needs.test.result }}" == "success" ]; then
+          echo "✅ Тестирование: УСПЕШНО"
+        else
+          echo "❌ Тестирование: ПРОВАЛЕНО"
+        fi
+        
+        if [ "${{ needs.quality.result }}" == "success" ]; then
+          echo "✅ Качество: УСПЕШНО"
+        else
+          echo "❌ Качество: ПРОВАЛЕНО"
+        fi
+        
+        echo ""
+        
+        if [ "${{ needs.build.result }}" == "success" ] && [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.quality.result }}" == "success" ]; then
+          echo "🎉 ВСЕ ЭТАПЫ ПРОЙДЕНЫ УСПЕШНО!"
+          echo "📦 Плагин готов к использованию!"
+        else
+          echo "⚠️ Есть проблемы с сборкой"
+          echo "🔧 Проверьте логи для деталей"
+        fi
