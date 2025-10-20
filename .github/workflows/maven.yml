@@ -135,7 +135,7 @@ jobs:
       run: |
         if [ ! -f "LICENSE" ]; then
           echo "⚠️ Файл LICENSE не найден, создаем MIT лицензию..."
-          cat > LICENSE << 'EOF'
+          cat > LICENSE << 'EOL'
 MIT License
 
 Copyright (c) 2024 gordey9992
@@ -157,7 +157,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-EOF
+EOL
           echo "✅ Файл LICENSE создан"
         else
           echo "✅ Файл LICENSE найден"
@@ -219,7 +219,6 @@ EOF
           **📅 Сборка:** ${{ github.run_number }}  
           **🔗 Коммит:** [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})  
           **👥 Авторы:** [gordey9992](https://github.com/gordey9992) и [DeepSeek](https://github.com/DeepSeek-AI)
-          
         generate_release_notes: true
         draft: false
         prerelease: false
