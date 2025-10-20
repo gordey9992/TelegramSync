@@ -73,9 +73,9 @@ webhook:
 auto-messages:
   # Приветствие при входе игрока
   player-join: true
-  # Прощание при выходе игрока
+  # Прощание при выходе игрока  
   player-quit: true
-  # Уведомления о достижениях
-  achievements: true
+  # Уведомления о достижениях # По умолчанию - false (Выкл)
+  achievements: false
   # Уведомления о смерти
   deaths: true
