@@ -1,0 +1,38 @@
+name: TelegramSync
+version: 1.0.0
+main: com.yourserver.telegramsync.TelegramSyncPlugin
+api-version: 1.21
+description: 🔮 Синхронизация чата Minecraft и Telegram | Авторы: gordey25690 & DeepSeek
+author: gordey25690
+website: https://github.com/gordey25690
+load: POSTWORLD
+
+commands:
+  telegramsync:
+    description: Основные команды синхронизации
+    usage: /<command> <reload|status|test|broadcast>
+    aliases: [tsync, tg]
+  tg:
+    description: Отправить сообщение в Telegram
+    usage: /<command> <сообщение>
+  tgbroadcast:
+    description: Трансляция в Telegram
+    usage: /<command> <сообщение>
+    permission: telegramsync.broadcast
+
+permissions:
+  telegramsync.*:
+    description: Полный доступ к синхронизации
+    children:
+      telegramsync.reload: true
+      telegramsync.broadcast: true
+      telegramsync.admin: true
+  telegramsync.reload:
+    description: Перезагрузка конфигурации
+    default: op
+  telegramsync.broadcast:
+    description: Трансляция в Telegram
+    default: op
+  telegramsync.admin:
+    description: Административные команды
+    default: op
