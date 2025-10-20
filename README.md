@@ -1,4 +1,3 @@
-<!-- Логотип и заголовок -->
 <div align="center">
 
 # 🔮 TelegramSync
@@ -11,7 +10,7 @@
 ![Java](https://img.shields.io/badge/Java-21-red?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey?style=for-the-badge)
 
-*✨ Авторы: [gordey25690](https://github.com/gordey25690) и [DeepSeek](https://github.com/DeepSeek-AI) ✨*
+*✨ Авторы: [gordey9992](https://github.com/gordey9992) и [DeepSeek](https://github.com/DeepSeek-AI) ✨*
 
 </div>
 
@@ -36,7 +35,7 @@
 
 ### ⏱️ Установка за 3 минуты:
 
-1. **📥 Скачайте** [последнюю версию](https://github.com/gordey25690/TelegramSync/releases)
+1. **📥 Скачайте** [последнюю версию](https://github.com/gordey9992/TelegramSync/releases)
 2. **📂 Переместите** `TelegramSync.jar` в папку `plugins/`
 3. **🔄 Перезагрузите** сервер
 4. **🤖 Настройте** бота в `config.yml`
