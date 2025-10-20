@@ -135,7 +135,7 @@ jobs:
       run: |
         if [ ! -f "LICENSE" ]; then
           echo "⚠️ Файл LICENSE не найден, создаем MIT лицензию..."
-          cat > LICENSE << 'EOL'
+          cat << 'EOF' > LICENSE
 MIT License
 
 Copyright (c) 2024 gordey9992
@@ -157,7 +157,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-EOL
+EOF
           echo "✅ Файл LICENSE создан"
         else
           echo "✅ Файл LICENSE найден"
