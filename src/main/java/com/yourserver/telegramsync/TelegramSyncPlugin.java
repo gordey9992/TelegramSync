@@ -45,7 +45,7 @@ public class TelegramSyncPlugin extends JavaPlugin implements Listener {
         getLogger().info("║                                                                              ║");
         getLogger().info("║              🎮 СИНХРОНИЗАЦИЯ MINECRAFT И TELEGRAM 🎮                      ║");
         getLogger().info("║                                                                              ║");
-        getLogger().info("║              ✨ Авторы: gordey25690 и DeepSeek ✨                           ║");
+        getLogger().info("║              ✨ Авторы: gordey9992 и DeepSeek ✨                           ║");
         getLogger().info("║              🌟 Версия: 1.0.0 | Minecraft 1.21 🌟                         ║");
         getLogger().info("║              📅 " + new Date().toString() + " 📅                          ║");
         getLogger().info("║                                                                              ║");
@@ -157,51 +157,52 @@ public class TelegramSyncPlugin extends JavaPlugin implements Listener {
     }
 
     private void registerCommands() {
-        // Регистрируем команды через plugin.yml
+        CommandRegistry.registerCommands(this);
     }
 
     @EventHandler
-public void onPlayerChat(AsyncPlayerChatEvent event) {
-    if (!botConnected || !getConfig().getBoolean("sync.minecraft-to-telegram", true)) {
-        return;
-    }
-    
-    Player player = event.getPlayer();
-    String message = event.getMessage();
-    
-    // Проверяем на блокируемые слова
-    if (containsBlockedWords(message)) {
-        player.sendMessage(configManager.getMessage("errors.message-blocked"));
-        event.setCancelled(true);
-        return;
-    }
-    
-    // Фильтрация: какие сообщения отправлять в Telegram
-    boolean shouldSend = false;
-    
-    // Сообщения с ! в начале
-    if (message.startsWith("!") && getConfig().getBoolean("sync.send-command-messages", true)) {
-        shouldSend = true;
-        // Убираем ! из сообщения для Telegram
-        message = message.substring(1);
-    }
-    // Сообщения от плагинов (содержат [])
-    else if (message.contains("[") && message.contains("]") && getConfig().getBoolean("sync.send-plugin-messages", true)) {
-        shouldSend = true;
-    }
-    // Обычные сообщения (если включено)
-    else if (getConfig().getBoolean("sync.send-normal-messages", false)) {
-        shouldSend = true;
-    }
-    
-    if (shouldSend) {
-        // Форматируем сообщение для Telegram
-        String formattedMessage = formatMinecraftToTelegram(player.getName(), message);
+    public void onPlayerChat(AsyncPlayerChatEvent event) {
+        if (!botConnected || !getConfig().getBoolean("sync.minecraft-to-telegram", true)) {
+            return;
+        }
         
-        // Отправляем в Telegram
-        sendTelegramMessage(formattedMessage);
+        Player player = event.getPlayer();
+        String message = event.getMessage();
         
-        messagesSent++;
+        // Проверяем на блокируемые слова
+        if (containsBlockedWords(message)) {
+            player.sendMessage(configManager.getMessage("errors.message-blocked"));
+            event.setCancelled(true);
+            return;
+        }
+        
+        // Фильтрация: какие сообщения отправлять в Telegram
+        boolean shouldSend = false;
+        
+        // Сообщения с ! в начале
+        if (message.startsWith("!") && getConfig().getBoolean("sync.send-command-messages", true)) {
+            shouldSend = true;
+            // Убираем ! из сообщения для Telegram
+            message = message.substring(1);
+        }
+        // Сообщения от плагинов (содержат [])
+        else if (message.contains("[") && message.contains("]") && getConfig().getBoolean("sync.send-plugin-messages", true)) {
+            shouldSend = true;
+        }
+        // Обычные сообщения (если включено)
+        else if (getConfig().getBoolean("sync.send-normal-messages", false)) {
+            shouldSend = true;
+        }
+        
+        if (shouldSend) {
+            // Форматируем сообщение для Telegram
+            String formattedMessage = formatMinecraftToTelegram(player.getName(), message);
+            
+            // Отправляем в Telegram
+            sendTelegramMessage(formattedMessage);
+            
+            messagesSent++;
+        }
     }
 
     @EventHandler
@@ -357,7 +358,3 @@ public void onPlayerChat(AsyncPlayerChatEvent event) {
         return botConnected;
     }
 }
-
-    private void registerCommands() {
-        CommandRegistry.registerCommands(this);
-    }
