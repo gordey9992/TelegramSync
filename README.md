@@ -1,0 +1,2 @@
+# TelegramSync
+Плагин TelegramSync
